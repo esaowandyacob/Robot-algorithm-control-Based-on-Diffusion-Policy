@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>Diffusion Policy 相关问题综述</title>
+  <style>
+    body {
+      font-family: "PingFang SC", "Songti SC", "STSong", serif;
+      line-height: 1.7;
+      margin: 36px 42px;
+      color: #222;
+    }
+    h1, h2, h3 {
+      color: #111;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 8px;
+    }
+    .meta {
+      text-align: center;
+      color: #666;
+      margin-bottom: 28px;
+      font-size: 13px;
+    }
+    p {
+      text-indent: 2em;
+      margin: 8px 0;
+    }
+    ul {
+      margin: 8px 0 8px 1.5em;
+    }
+    li {
+      margin: 6px 0;
+    }
+    .no-indent {
+      text-indent: 0;
+    }
+    .ref li {
+      word-break: break-all;
+    }
+  </style>
+</head>
+<body>
+  <h1>Diffusion Policy 相关问题综述</h1>
+  <div class="meta">依据项目内《DiffusionPolicy.docx》《diffusion_policy_ijrr.pdf》《任务书_李文博_20223914.docx》整理，并补充截至 2026 年 4 月 12 日的官方公开资料。</div>
+
+  <p>根据任务书，本课题聚焦“基于 Diffusion Policy 的机器人操控算法设计与实现”，需要同时完成研究现状调研、扩散模型原理理解、训练复现与系统评估。因此，《DiffusionPolicy.docx》中提出的五个问题并不是孤立知识点，而是后续毕设开题、方案设计和实验分析的理论基础。下面围绕这五个问题形成一份可直接用于写作的综述性文档。</p>
+
+  <h2>一、人形机器人近年发展</h2>
+  <p>近几年人形机器人最明显的变化，是研究重点从“能走、能演示”逐步转向“能在真实场景稳定执行任务”。如果把时间线放在 2024 年到 2026 年来看，行业演进大致呈现出硬件电动化与可靠化、算法具身智能化、应用场景商业化三条主线。</p>
+
+  <p>第一，硬件平台正在从实验室样机走向面向产业场景的产品化平台。2024 年 4 月，Boston Dynamics 发布全电动版 Atlas，明确提出其目标是面向真实工业应用，而不是单纯做动态动作展示。这说明人形机器人平台的评价标准，已经从“运动能力很强”转向“是否适合长期、安全、可维护地部署”。2024 年，优必选发布工业人形机器人 Walker S1，并表示 Walker S 系列已在多家汽车工厂开始实训；到 2025 年，优必选进一步推出 Walker S2 并开始量产交付。这类信息表明，人形机器人正在从单机原型验证进入面向制造业流程的持续测试阶段。</p>
+
+  <p>第二，商业落地正在从试点演示转向真实岗位部署。Agility Robotics 在 2024 年 6 月让 Digit 进入 GXO 的物流运营环节，其后在 2024 年 10 月发布文章时明确将其定义为人形机器人进入正式商业运营的重要节点。它的意义不只是“上岗”本身，而是证明人形机器人开始在为人设计的仓储环境中承担重复劳动，这比在高度定制化产线中运行更能体现人形结构的通用性价值。</p>
+
+  <p>第三，算法范式正从传统任务专用控制器，转向视觉-语言-动作一体化和端到端具身智能。2025 年 2 月，Figure 发布 Helix，将其定义为通用型 Vision-Language-Action（VLA）模型；2026 年 1 月，Figure 又发布 Helix 02，强调单一神经系统可以直接根据像素完成全身控制，把行走、抓取和平衡统一在同一套控制框架下。2025 年 9 月，Figure 还宣布与 Brookfield 合作建设大规模真实环境人形机器人预训练数据集。这说明人形机器人发展已经不仅仅依赖机械设计升级，更依赖高质量、多模态、可规模化的数据和模型训练体系。</p>
+
+  <p>第四，近年发展的核心趋势可以概括为“本体升级 + 数据驱动 + 端到端控制 + 场景验证”同时推进。过去人形机器人更多依赖专家规则和分模块控制；现在越来越多平台采用强化学习、模仿学习、扩散策略、VLA 模型等方法，让机器人在复杂环境中通过数据学习动作生成规律。这与具身智能的发展方向高度一致，也正是 Diffusion Policy 这类方法受到重视的背景。</p>
+
+  <p>不过，人形机器人距离大规模普及仍有明显瓶颈，包括成本过高、续航与散热受限、长时任务稳定性不足、安全认证体系尚未完全成熟，以及真实世界高质量操作数据仍然昂贵稀缺。因此，近年的发展可以说已经完成了“从概念验证到产业试探”的跨越，但离“低成本大规模部署”还有一段距离。</p>
+
+  <h2>二、机器人抓取算法对于机器人发展的意义和重要程度</h2>
+  <p>机器人抓取算法的重要性非常高，可以认为它是机器人从“能感知、能移动”走向“能真正完成任务”的关键环节。原因在于，机器人绝大多数有实际价值的工作都涉及对物体的接触、抓取、移动、装配、整理或交互。如果没有稳定的抓取能力，机器人即使能导航、能避障，也很难在工业制造、仓储物流、家庭服务、医疗辅助等场景中形成真正生产力。</p>
+
+  <p>从技术链条上看，抓取算法处在感知与控制的连接位置。一方面，它要求机器人正确理解目标物体的位置、姿态、尺寸、材质、可抓取区域以及周围障碍物；另一方面，它又必须把这些感知结果转化为机械臂轨迹、夹爪姿态、接触力控制和后续操作动作。因此，抓取算法实际上综合了计算机视觉、状态估计、运动规划、接触动力学和闭环控制等多个方向，是机器人系统集成能力的集中体现。</p>
+
+  <p>从应用角度看，抓取算法决定了机器人是否具备泛化能力。传统工业机器人在固定工位抓取标准件时，往往可以通过夹具和固定轨迹完成任务；但在人形机器人、服务机器人和柔性制造场景中，物体种类多、摆放杂乱、遮挡频繁、接触条件不确定，这时抓取算法必须具备对未知物体的泛化能力与容错能力。也正因为如此，抓取研究常被视为具身智能落地的核心能力之一。</p>
+
+  <p>从本课题角度看，Diffusion Policy 的价值恰恰体现在复杂操控与抓取任务上。它并不是只预测一个静态抓取点，而是生成一段连续动作序列，使机器人能够在视觉反馈下逐步修正动作，完成接近、对位、接触、抓取、搬运等一系列步骤。因此，抓取算法的重要程度不仅“高”，而且可以说是机器人操控研究中最能体现算法先进性的方向之一。</p>
+
+  <h2>三、什么是马尔科夫</h2>
+  <p>“马尔科夫”通常指马尔科夫性质（Markov Property）。其核心思想是：在当前状态已经给定的条件下，系统未来的发展只与当前状态有关，而与更早以前的历史无关。换句话说，“现在”已经包含了预测“下一步”所需的全部关键信息。</p>
+
+  <p>在机器人与强化学习中，马尔科夫思想通常通过马尔科夫决策过程（MDP）表达。一个 MDP 一般包含状态、动作、状态转移概率和奖励函数。若系统满足马尔科夫性质，那么决策器在时刻 <em>t</em> 只需要依据当前状态 <em>s<sub>t</sub></em> 选择动作 <em>a<sub>t</sub></em>，就可以影响下一状态 <em>s<sub>t+1</sub></em>，而不必显式记住全部历史轨迹。</p>
+
+  <p>这个假设的重要作用在于，它把原本非常复杂的时序决策问题简化成“当前状态到下一步”的映射，便于建立控制器、策略网络和价值函数。大量经典控制方法、强化学习算法以及模仿学习框架，都是在 MDP 或其近似前提下设计的。</p>
+
+  <p>但在真实机器人问题中，严格的马尔科夫条件往往难以完全满足。原因是机器人通常只能看到部分观测，例如单帧图像可能看不到被遮挡物体，也无法直接完整表达速度、接触状态和历史动作影响。因此，现实中的机器人问题更准确地说常常接近部分可观测马尔科夫决策过程（POMDP）。这也是为什么很多机器人策略会使用历史图像、状态序列、时序编码或记忆结构，来近似恢复“足够完整的当前状态”。</p>
+
+  <p>结合 Diffusion Policy 来理解，论文并不是简单地根据一张图片直接输出一个动作，而是基于观测条件生成未来一段动作序列，并通过时序建模与滚动执行提高闭环控制效果。可以认为，这种做法本质上是在利用更多时序上下文来弥补真实机器人场景中“单步观测不完全满足马尔科夫性”的问题。</p>
+
+  <h2>四、Diffusion 与其他生成式算法相比，优点在哪</h2>
+  <p>从论文和官方项目资料来看，Diffusion Policy 的优势不只是“生成效果好”，而是它非常适合机器人操控这种高维、连续、具有多模态和强时序相关性的动作生成任务。与其他常见生成式方法相比，它的优点主要体现在以下几个方面。</p>
+
+  <ul>
+    <li><strong>更擅长表示多模态动作分布。</strong> 机器人在同一观测下往往存在多种都合理的动作方案，例如抓取一个物体可以从左侧接近，也可以从右侧接近。传统确定性行为克隆容易输出“平均动作”，导致动作犹豫甚至失败；而扩散模型通过逐步去噪采样，可以自然表示多个可行动作模式。论文中还特别展示了 Push-T 任务中的双峰动作分布，说明 Diffusion Policy 能学到多种可行策略并在一次 rollout 中稳定地“选定一种模式”执行。</li>
+    <li><strong>适合高维连续动作空间。</strong> 与需要离散化动作或依赖复杂动作 token 化的方法相比，Diffusion Policy 直接在连续动作空间中建模，特别适合机械臂轨迹、末端位姿、速度控制、甚至人形机器人高自由度控制这类问题。论文把这一点作为其重要优势之一。</li>
+    <li><strong>训练稳定性通常优于 GAN 类方法。</strong> GAN 的对抗训练常见问题是模式崩塌、训练不稳定和生成器判别器难以平衡；而扩散模型本质上是学习去噪过程或分数函数，优化目标更直接，训练通常更稳定，任务间需要的超参数微调也相对更少。论文明确指出，Diffusion Policy 在机器人任务中体现出较强的训练稳定性。</li>
+    <li><strong>能够生成时间一致的动作序列。</strong> 机器人控制不是单点预测，而是连续执行。Diffusion Policy 直接预测动作序列，并结合 receding-horizon control（滚动时域控制）反复重规划，因此既有一定的长时规划能力，又保持了闭环响应能力。这一点优于只关注单步动作输出的简单回归模型。</li>
+    <li><strong>视觉条件建模更适合实时操控。</strong> 论文把视觉信息作为条件输入，而不是每次去噪都重新联合建模，这样能减少重复计算，提高实时推理能力。对机器人来说，这一点很关键，因为控制策略必须在有限时延内输出可执行动作。</li>
+    <li><strong>实验性能有明确证据支持。</strong> 论文在 4 个 benchmark、15 个任务上评估 Diffusion Policy，报告其相对于已有方法平均成功率提升约 46.9%。这说明它不是只在个别案例中有效，而是在多种操控环境下都表现出较强竞争力。</li>
+  </ul>
+
+  <p>如果进一步和 VAE、自回归模型或能量模型比较，可以这样理解：VAE 往往在精细连续控制上容易出现样本过平滑；自回归方法虽然能表达序列，但长序列误差累积较明显；能量模型表达能力强，但推理和优化过程较复杂。Diffusion Policy 兼顾了表达能力、训练稳定性和动作时序一致性，因此在机器人操控场景中很有吸引力。</p>
+
+  <p>当然，扩散方法并非没有代价。它的主要缺点是推理往往需要多步去噪，计算开销通常高于一次前向直接输出动作的策略网络。因此，Diffusion Policy 的真实优势更准确地说是：在复杂操控任务上，它以更高的计算代价换来了更强的表达能力、更好的多模态建模和更稳健的执行效果。</p>
+
+  <h2>五、当前复现算法的困难在哪些地方</h2>
+  <p>这一部分如果只看论文，容易觉得 Diffusion Policy 已经非常成熟；但结合官方仓库 README 和截至 2026 年 4 月公开的 issue，可以推断出“当前复现困难”主要集中在工程环境、数据处理、依赖版本和真实机器人执行四个层面。这里的“推断”是基于官方文档与公开 issue 的综合归纳。</p>
+
+  <ul>
+    <li><strong>环境配置门槛高。</strong> 官方 README 明确建议在带 Nvidia GPU 的 Linux 机器上复现仿真 benchmark，并说明 Ubuntu 20.04 需要额外安装 MuJoCo 相关依赖；同时还指出 `conda_environment_macos.yaml` 只适合 MacOS 开发，不完全支持 benchmark。这意味着如果开发环境不是官方推荐配置，就很容易在依赖安装、仿真兼容性和性能上遇到问题。</li>
+    <li><strong>真实机器人复现需要专门硬件。</strong> 官方“Real Robot”部分列出了 UR5/UR5e、RealSense D415、SpaceMouse、工具端以及 RTDE 接口等具体硬件要求。也就是说，论文中真实实验部分并不是单纯下载代码就能完整复现，而是明显依赖专门平台，这对大多数学生和实验室都是门槛。</li>
+    <li><strong>数据集准备和预处理较复杂。</strong> 官方仓库要求用户额外下载训练数据与实验配置文件；同时仓库内部又使用 zarr、hdf5、ReplayBuffer 等特定数据组织方式。公开 issue 中还出现了 Robomimic 版本兼容和 XML 元数据差异问题，说明即便拿到了数据，也未必能直接和原始上游基准无缝兼容。</li>
+    <li><strong>依赖版本漂移明显。</strong> 截至 2025 至 2026 年，官方仓库 issue 中已经出现 `cached_download` 导入失败、`MUJOCO_PATH` 未设置、`DEFAULT_CIPHERS` 导入失败等问题。这说明随着 Python 包和底层依赖持续更新，旧仓库的可复现性会不断下降。复现者不仅要理解算法，还要会处理“代码能不能跑起来”的工程问题。</li>
+    <li><strong>运行稳定性与系统细节问题较多。</strong> README 专门提醒：Linux 下通过 `fork` 启动子进程时，如果环境初始化过 OpenGL，上下文继承可能导致 segfault；公开 issue 中也有人报告 `env.reset()` 返回 `None` 等问题。这类问题通常不属于算法本身，但非常消耗复现时间，因为排查对象横跨仿真器、渲染、并行加载和数据封装等多个层级。</li>
+    <li><strong>模型调参与计算资源压力仍然存在。</strong> 论文虽然强调扩散策略训练较稳定，但也指出 transformer 版本对超参数更敏感。与此同时，Diffusion Policy 需要多步去噪推理，训练和评估也经常配合多 seed、ray 集群和 wandb 监控使用，这意味着要想真正复现论文级结果，算力、显存、训练时长和实验管理能力都不能太弱。</li>
+  </ul>
+
+  <p>综合来说，当前复现 Diffusion Policy 的难点并不单纯是“看不懂论文”，而是“算法理解 + 软件环境 + 数据预处理 + 计算资源 + 系统调试”五方面叠加。对于本科毕业设计而言，比较现实的路径通常是：先在官方提供的数据和配置上完成单任务跑通，再逐步做参数调整和结果分析，而不是一开始就试图完整复现实验论文中的全部 benchmark。</p>
+
+  <h2>六、总结</h2>
+  <p>总体来看，Diffusion Policy 所处的研究背景正好对应当前机器人领域的主要趋势：人形机器人从原型展示走向场景落地，操控算法从规则与单任务模仿学习走向具备多模态建模能力的生成式策略，而抓取与连续动作生成能力正是机器人真正形成应用价值的核心。马尔科夫思想为策略建模提供了理论基础，扩散模型则为高维、多模态、长时序动作生成提供了新的有效方案。</p>
+
+  <p>对于本课题“基于 Diffusion Policy 的机器人操控算法设计与实现”而言，以上五个问题可以归纳成一句话：为什么要研究 Diffusion Policy、它解决了什么问题、它相较已有方法强在哪里、以及在真实复现中会遇到什么障碍。把这些问题回答清楚，后续进行算法实现、实验设计和论文撰写就会更有逻辑。</p>
+
+  <h2>参考资料</h2>
+  <ul class="ref">
+    <li>项目内文档：《DiffusionPolicy.docx》。</li>
+    <li>项目内文档：《任务书_李文博_20223914.docx》。</li>
+    <li>Cheng Chi 等，<em>Diffusion Policy: Visuomotor Policy Learning via Action Diffusion</em>，IJRR 论文官方页：<a href="https://diffusion-policy.cs.columbia.edu/diffusion_policy_ijrr.pdf">https://diffusion-policy.cs.columbia.edu/diffusion_policy_ijrr.pdf</a></li>
+    <li>官方代码仓库 README：<a href="https://github.com/real-stanford/diffusion_policy">https://github.com/real-stanford/diffusion_policy</a></li>
+    <li>Boston Dynamics，Introducing Electric Atlas，2024-04：<a href="https://bostondynamics.com/news/introducing-electric-atlas/">https://bostondynamics.com/news/introducing-electric-atlas/</a></li>
+    <li>Agility Robotics，Digit Deployed at GXO in Historic Humanoid RAAS Agreement，2024-10：<a href="https://www.agilityrobotics.com/content/digit-deployed-at-gxo-in-historic-humanoid-raas-agreement">https://www.agilityrobotics.com/content/digit-deployed-at-gxo-in-historic-humanoid-raas-agreement</a></li>
+    <li>UBTECH 公司里程碑页面：<a href="https://www.ubtrobot.com/en/about/company-profile">https://www.ubtrobot.com/en/about/company-profile</a></li>
+    <li>Figure，Helix: A Vision-Language-Action Model for Generalist Humanoid Control，2025-02-20：<a href="https://www.figure.ai/news/helix">https://www.figure.ai/news/helix</a></li>
+    <li>Figure，Project Go-Big: Internet-Scale Humanoid Pretraining and Direct Human-to-Robot Transfer，2025-09-18：<a href="https://www.figure.ai/news/project-go-big">https://www.figure.ai/news/project-go-big</a></li>
+    <li>Figure，Introducing Helix 02: Full-Body Autonomy，2026-01-27：<a href="https://www.figure.ai/news/helix-02">https://www.figure.ai/news/helix-02</a></li>
+    <li>官方仓库 issue 列表与示例问题：<a href="https://github.com/real-stanford/diffusion_policy/issues">https://github.com/real-stanford/diffusion_policy/issues</a>；Robomimic 兼容问题 #130：<a href="https://github.com/real-stanford/diffusion_policy/issues/130">https://github.com/real-stanford/diffusion_policy/issues/130</a>；环境重置问题 #134：<a href="https://github.com/real-stanford/diffusion_policy/issues/134">https://github.com/real-stanford/diffusion_policy/issues/134</a></li>
+  </ul>
+</body>
+</html>

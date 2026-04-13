@@ -1,0 +1,41 @@
+experiment:
+  name: pusht_state_diffusion
+  output_dir: outputs/pusht_state_diffusion
+
+seed: 42
+
+dataset:
+  name: pusht_state
+  path: data/pusht/pusht_cchi_v7_replay.zarr
+  observation_key: state
+  action_key: action
+  obs_horizon: 2
+  pred_horizon: 16
+  val_ratio: 0.02
+  max_train_windows: 12000
+  max_val_windows: 1024
+
+model:
+  type: diffusion
+  hidden_dim: 128
+  num_layers: 4
+  num_heads: 4
+  dropout: 0.1
+  diffusion_steps: 20
+  beta_start: 0.0001
+  beta_end: 0.02
+
+training:
+  batch_size: 128
+  epochs: 30
+  lr: 0.0001
+  weight_decay: 0.000001
+  device: auto
+  log_interval: 1
+  monitor_metric: action_mse
+  monitor_mode: min
+
+evaluation:
+  batch_size: 128
+  samples_per_observation: 1
+  deterministic_sampling: true

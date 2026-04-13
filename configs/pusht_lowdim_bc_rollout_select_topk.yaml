@@ -1,0 +1,47 @@
+experiment:
+  name: pusht_lowdim_bc_rollout_select_topk
+  output_dir: outputs/pusht_lowdim_bc_rollout_select_topk
+
+seed: 42
+
+dataset:
+  name: pusht_lowdim
+  path: data/pusht/pusht_cchi_v7_replay.zarr
+  horizon: 16
+  n_obs_steps: 2
+  n_action_steps: 8
+  val_ratio: 0.02
+  max_train_episodes: 90
+  max_train_windows: 12000
+  max_val_windows: 1024
+
+model:
+  type: bc
+  hidden_dim: 256
+  num_layers: 4
+
+training:
+  batch_size: 256
+  epochs: 30
+  lr: 0.001
+  weight_decay: 0.0001
+  device: auto
+  log_interval: 1
+  monitor_metric: rollout_mean_final_coverage
+  monitor_mode: max
+  rollout_validation:
+    enabled: true
+    interval: 1
+    episodes: 5
+    seed_start: 100000
+    max_steps: 300
+    controller_mode: policy
+  top_k_checkpoints:
+    enabled: true
+    k: 5
+    dir_name: top_k_checkpoints
+
+evaluation:
+  batch_size: 256
+  samples_per_observation: 1
+  oa_step_convention: true

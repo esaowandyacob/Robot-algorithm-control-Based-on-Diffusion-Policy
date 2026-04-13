@@ -1,0 +1,36 @@
+experiment:
+  name: toy_bc_smoke
+  output_dir: outputs/toy_bc_smoke
+
+seed: 42
+
+dataset:
+  name: toy_multimodal
+  num_train: 1024
+  num_val: 128
+  horizon: 24
+  obstacle_radius: 0.35
+  obstacle_margin: 0.48
+  curvature_jitter: 0.18
+  start_y: -1.2
+  goal_y: 1.2
+
+model:
+  type: bc
+  hidden_dim: 256
+  num_layers: 4
+
+training:
+  batch_size: 128
+  epochs: 3
+  lr: 0.001
+  weight_decay: 0.0001
+  device: auto
+  log_interval: 1
+
+evaluation:
+  batch_size: 128
+  distance_threshold: 0.12
+  collision_margin: 0.0
+  samples_per_observation: 1
+

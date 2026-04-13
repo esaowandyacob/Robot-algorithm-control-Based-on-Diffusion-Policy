@@ -1,0 +1,31 @@
+[build-system]
+requires = ["hatchling>=1.24.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "dp-project"
+version = "0.1.0"
+description = "A staged graduation project scaffold for Diffusion Policy."
+readme = "README.md"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+  "matplotlib>=3.9,<4.0",
+  "numpy>=1.26,<3.0",
+  "numcodecs>=0.13,<0.16",
+  "PyYAML>=6.0,<7.0",
+  "pymunk>=6.8,<7.0",
+  "shapely>=2.0,<3.0",
+  "torch>=2.4,<3.0",
+  "zarr>=2.18,<3.0",
+]
+
+[project.scripts]
+dp-train = "dp_project.cli.train:main"
+dp-eval = "dp_project.cli.evaluate:main"
+dp-download-pusht = "dp_project.cli.download_pusht:main"
+dp-report = "dp_project.cli.report:main"
+dp-rollout-pusht = "dp_project.cli.rollout_pusht:main"
+dp-select-pusht-checkpoints = "dp_project.cli.select_pusht_checkpoints:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/dp_project"]
