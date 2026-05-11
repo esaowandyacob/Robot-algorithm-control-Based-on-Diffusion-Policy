@@ -506,6 +506,12 @@ def save_checkpoint(
     shape_info: dict[str, int],
     metrics: dict[str, float],
     ema_model: nn.Module | None = None,
+    optimizer: torch.optim.Optimizer | None = None,
+    epoch: int | None = None,
+    history: list[dict[str, float]] | None = None,
+    best_metric_value: float | None = None,
+    top_checkpoints: list[dict[str, float | str]] | None = None,
+    ema_optimization_step: int | None = None,
 ) -> None:
     checkpoint_path = Path(path)
     checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
@@ -517,6 +523,18 @@ def save_checkpoint(
     }
     if ema_model is not None:
         payload["ema_model_state_dict"] = ema_model.state_dict()
+    if optimizer is not None:
+        payload["optimizer_state_dict"] = optimizer.state_dict()
+    if epoch is not None:
+        payload["epoch"] = epoch
+    if history is not None:
+        payload["history"] = history
+    if best_metric_value is not None:
+        payload["best_metric_value"] = best_metric_value
+    if top_checkpoints is not None:
+        payload["top_checkpoints"] = top_checkpoints
+    if ema_optimization_step is not None:
+        payload["ema_optimization_step"] = ema_optimization_step
     torch.save(payload, checkpoint_path)
 
 
