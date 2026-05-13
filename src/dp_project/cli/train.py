@@ -13,6 +13,7 @@ from dp_project.experiment import (
     evaluate_model,
     get_monitor_settings,
     is_better_metric,
+    load_checkpoint,
     save_checkpoint,
     save_metrics,
 )
@@ -39,6 +40,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--epochs", type=int, help="Optional override for training epochs.")
     parser.add_argument("--device", help="Optional override for training device.")
     parser.add_argument("--output-dir", help="Optional override for output directory.")
+    parser.add_argument("--resume", help="Optional checkpoint path to resume training from.")
     return parser.parse_args()
 
 
@@ -191,8 +193,34 @@ def main() -> None:
     top_checkpoints: list[dict[str, float | str]] = []
     epochs = int(config["training"]["epochs"])
     log_interval = int(config["training"].get("log_interval", 1))
+    start_epoch = 1
 
-    for epoch in range(1, epochs + 1):
+    if args.resume is not None:
+        checkpoint = load_checkpoint(args.resume, device)
+        model.load_state_dict(checkpoint["model_state_dict"])
+        if "optimizer_state_dict" in checkpoint:
+            optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+        if ema_helper is not None and "ema_model_state_dict" in checkpoint:
+            ema_helper.averaged_model.load_state_dict(checkpoint["ema_model_state_dict"])
+            ema_helper.averaged_model.to(device)
+        if ema_helper is not None and "ema_optimization_step" in checkpoint:
+            ema_helper.optimization_step = int(checkpoint["ema_optimization_step"])
+
+        checkpoint_epoch = int(checkpoint.get("epoch", checkpoint.get("metrics", {}).get("epoch", 0)))
+        start_epoch = checkpoint_epoch + 1
+        history = list(checkpoint.get("history", []))
+        top_checkpoints = list(checkpoint.get("top_checkpoints", []))
+        if "best_metric_value" in checkpoint:
+            best_metric_value = float(checkpoint["best_metric_value"])
+        else:
+            best_metric_value = checkpoint.get("metrics", {}).get(monitor_metric)
+            best_metric_value = float(best_metric_value) if best_metric_value is not None else None
+        print(f"Resuming from {args.resume} at epoch {start_epoch}.")
+
+    if start_epoch > epochs:
+        print(f"Checkpoint already reached epoch {start_epoch - 1}; target epochs is {epochs}. Nothing to train.")
+
+    for epoch in range(start_epoch, epochs + 1):
         model.train()
         running_loss = 0.0
         batch_count = 0
@@ -238,6 +266,12 @@ def main() -> None:
                 shape_info=shape_info,
                 metrics=epoch_metrics,
                 ema_model=ema_helper.averaged_model if ema_helper is not None else None,
+                optimizer=optimizer,
+                epoch=epoch,
+                history=history,
+                best_metric_value=best_metric_value,
+                top_checkpoints=top_checkpoints,
+                ema_optimization_step=ema_helper.optimization_step if ema_helper is not None else None,
             )
         top_checkpoints = maybe_update_top_k_checkpoints(
             output_dir=Path(output_dir),
@@ -249,6 +283,20 @@ def main() -> None:
             monitor_mode=monitor_mode,
             ema_model=ema_helper.averaged_model if ema_helper is not None else None,
             top_checkpoints=top_checkpoints,
+        )
+        save_checkpoint(
+            output_dir / "last.pt",
+            model=model,
+            config=config,
+            shape_info=shape_info,
+            metrics=epoch_metrics,
+            ema_model=ema_helper.averaged_model if ema_helper is not None else None,
+            optimizer=optimizer,
+            epoch=epoch,
+            history=history,
+            best_metric_value=best_metric_value,
+            top_checkpoints=top_checkpoints,
+            ema_optimization_step=ema_helper.optimization_step if ema_helper is not None else None,
         )
 
         if epoch % log_interval == 0:

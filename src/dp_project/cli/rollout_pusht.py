@@ -36,6 +36,22 @@ def parse_args() -> argparse.Namespace:
         default=0.84,
         help="Coverage threshold used by the stabilize controller before it switches to hold mode.",
     )
+    parser.add_argument(
+        "--num-candidates",
+        type=int,
+        help="Optional number of Diffusion action candidates sampled at each replan.",
+    )
+    parser.add_argument(
+        "--candidate-selection",
+        choices=["first", "coverage"],
+        default="first",
+        help="How to select among sampled Diffusion action candidates.",
+    )
+    parser.add_argument(
+        "--candidate-score-steps",
+        type=int,
+        help="Number of planned actions used by coverage candidate scoring.",
+    )
     parser.add_argument("--device", default="auto", help="Rollout device.")
     parser.add_argument("--output-json", help="Optional path to save rollout metrics.")
     return parser.parse_args()
@@ -67,6 +83,9 @@ def main() -> None:
         exec_steps_override=args.exec_steps,
         controller_mode=args.controller_mode,
         stabilize_coverage_threshold=args.stabilize_coverage_threshold,
+        num_candidates_override=args.num_candidates,
+        candidate_selection=args.candidate_selection,
+        candidate_score_steps=args.candidate_score_steps,
     )
 
     payload = {
@@ -76,6 +95,9 @@ def main() -> None:
         "exec_steps": args.exec_steps,
         "controller_mode": args.controller_mode,
         "stabilize_coverage_threshold": args.stabilize_coverage_threshold,
+        "num_candidates": args.num_candidates,
+        "candidate_selection": args.candidate_selection,
+        "candidate_score_steps": args.candidate_score_steps,
         "success_rate": summary.success_rate,
         "mean_final_reward": summary.mean_final_reward,
         "mean_max_reward": summary.mean_max_reward,
@@ -90,6 +112,11 @@ def main() -> None:
 
     print("Rollout summary:")
     print(f"  controller_mode: {args.controller_mode}")
+    print(f"  candidate_selection: {args.candidate_selection}")
+    if args.num_candidates is not None:
+        print(f"  num_candidates: {args.num_candidates}")
+    if args.candidate_score_steps is not None:
+        print(f"  candidate_score_steps: {args.candidate_score_steps}")
     if args.controller_mode == "stabilize":
         print(f"  stabilize_coverage_threshold: {args.stabilize_coverage_threshold:.6f}")
     print(f"  success_rate: {summary.success_rate:.6f}")
@@ -105,3 +132,7 @@ def main() -> None:
     if args.output_json:
         save_json(Path(args.output_json), payload)
         print(f"Saved rollout metrics to: {args.output_json}")
+
+
+if __name__ == "__main__":
+    main()

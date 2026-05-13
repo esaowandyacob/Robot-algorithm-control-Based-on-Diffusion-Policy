@@ -102,6 +102,7 @@ class PushTEnv:
         self.n_contact_points = 0
         n_steps = self.sim_hz // self.control_hz
         action = np.asarray(action, dtype=np.float64)
+        action = np.clip(action, 0.0, float(self.window_size))
         self.latest_action = action
 
         for _ in range(n_steps):

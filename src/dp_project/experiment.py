@@ -350,21 +350,26 @@ def compute_loss(
 
 
 @torch.no_grad()
-def predict_actions(
+def predict_action_candidates(
     model: nn.Module,
     scheduler: DDPMScheduler | None,
     observations: torch.Tensor,
     config: dict[str, Any],
     shape_info: dict[str, Any],
+    num_candidates_override: int | None = None,
 ) -> torch.Tensor:
     normalized_observations = _normalize_observations(observations, shape_info)
     normalized_observations = _select_policy_observations(normalized_observations, shape_info)
     if config["model"]["type"] == "bc":
         normalized_actions = model(normalized_observations)
-        return _denormalize_actions(normalized_actions, shape_info)
+        return _denormalize_actions(normalized_actions, shape_info).unsqueeze(1)
 
     assert scheduler is not None
-    num_candidates = int(config["evaluation"]["samples_per_observation"])
+    num_candidates = (
+        int(num_candidates_override)
+        if num_candidates_override is not None
+        else int(config["evaluation"]["samples_per_observation"])
+    )
     normalized_candidates = sample_action_candidates(
         model=model,
         scheduler=scheduler,
@@ -374,7 +379,24 @@ def predict_actions(
         num_candidates=num_candidates,
         deterministic=bool(config["evaluation"].get("deterministic_sampling", False)),
     )
-    candidates = _denormalize_actions(normalized_candidates, shape_info)
+    return _denormalize_actions(normalized_candidates, shape_info)
+
+
+@torch.no_grad()
+def predict_actions(
+    model: nn.Module,
+    scheduler: DDPMScheduler | None,
+    observations: torch.Tensor,
+    config: dict[str, Any],
+    shape_info: dict[str, Any],
+) -> torch.Tensor:
+    candidates = predict_action_candidates(
+        model=model,
+        scheduler=scheduler,
+        observations=observations,
+        config=config,
+        shape_info=shape_info,
+    )
 
     if shape_info["dataset_name"] == "toy_multimodal":
         scores = score_action_candidates(
@@ -506,6 +528,12 @@ def save_checkpoint(
     shape_info: dict[str, int],
     metrics: dict[str, float],
     ema_model: nn.Module | None = None,
+    optimizer: torch.optim.Optimizer | None = None,
+    epoch: int | None = None,
+    history: list[dict[str, float]] | None = None,
+    best_metric_value: float | None = None,
+    top_checkpoints: list[dict[str, float | str]] | None = None,
+    ema_optimization_step: int | None = None,
 ) -> None:
     checkpoint_path = Path(path)
     checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
@@ -517,6 +545,18 @@ def save_checkpoint(
     }
     if ema_model is not None:
         payload["ema_model_state_dict"] = ema_model.state_dict()
+    if optimizer is not None:
+        payload["optimizer_state_dict"] = optimizer.state_dict()
+    if epoch is not None:
+        payload["epoch"] = epoch
+    if history is not None:
+        payload["history"] = history
+    if best_metric_value is not None:
+        payload["best_metric_value"] = best_metric_value
+    if top_checkpoints is not None:
+        payload["top_checkpoints"] = top_checkpoints
+    if ema_optimization_step is not None:
+        payload["ema_optimization_step"] = ema_optimization_step
     torch.save(payload, checkpoint_path)
 
 

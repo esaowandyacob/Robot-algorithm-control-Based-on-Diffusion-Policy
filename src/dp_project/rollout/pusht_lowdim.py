@@ -10,7 +10,7 @@ import torch
 import zarr
 
 from dp_project.envs.pusht_env import PushTEnv
-from dp_project.experiment import get_action_eval_slice, predict_actions
+from dp_project.experiment import get_action_eval_slice, predict_action_candidates
 
 
 ROLLOUT_COVERAGE_THRESHOLDS = (0.25, 0.5, 0.75, 0.9, 0.95)
@@ -96,6 +96,51 @@ def _apply_rollout_controller(
     raise ValueError(f"Unsupported rollout controller mode: {controller_mode}")
 
 
+def _simulate_candidate_score(
+    state_obs: np.ndarray,
+    actions: np.ndarray,
+) -> float:
+    sim_env = PushTEnv(reset_to_state=np.asarray(state_obs, dtype=np.float64))
+    try:
+        sim_env.reset(seed=0)
+        best_coverage = 0.0
+        final_coverage = 0.0
+        contact_count = 0
+        for action in actions:
+            result = sim_env.step(action)
+            final_coverage = float(result.info["coverage"])
+            best_coverage = max(best_coverage, final_coverage)
+            contact_count += int(result.info.get("n_contacts", 0))
+            if result.done:
+                break
+        return best_coverage + 0.25 * final_coverage + 0.001 * contact_count
+    finally:
+        sim_env.close()
+
+
+def _select_candidate_actions(
+    candidates: np.ndarray,
+    state_obs: np.ndarray,
+    action_slice: tuple[int, int] | None,
+    score_slice: tuple[int, int] | None,
+    candidate_selection: str,
+) -> tuple[np.ndarray, int]:
+    if candidate_selection == "first" or candidates.shape[0] == 1:
+        selected_index = 0
+    elif candidate_selection == "coverage":
+        scores = []
+        for candidate in candidates:
+            score_actions = candidate[score_slice[0] : score_slice[1]] if score_slice is not None else candidate
+            scores.append(_simulate_candidate_score(state_obs, score_actions))
+        selected_index = int(np.argmax(scores))
+    else:
+        raise ValueError(f"Unsupported candidate selection mode: {candidate_selection}")
+
+    selected = candidates[selected_index]
+    exec_actions = selected[action_slice[0] : action_slice[1]] if action_slice is not None else selected
+    return exec_actions, selected_index
+
+
 def run_pusht_lowdim_rollouts(
     model: torch.nn.Module,
     scheduler: Any,
@@ -108,6 +153,9 @@ def run_pusht_lowdim_rollouts(
     exec_steps_override: int | None = None,
     controller_mode: str = "policy",
     stabilize_coverage_threshold: float = 0.84,
+    num_candidates_override: int | None = None,
+    candidate_selection: str = "first",
+    candidate_score_steps: int | None = None,
 ) -> PushTRolloutSummary:
     dataset_path = config["dataset"]["path"]
     adapter = PushTLowdimObservationAdapter.from_dataset(dataset_path)
@@ -116,6 +164,11 @@ def run_pusht_lowdim_rollouts(
         config,
         shape_info,
         n_action_steps_override=exec_steps_override,
+    )
+    score_slice = get_action_eval_slice(
+        config,
+        shape_info,
+        n_action_steps_override=candidate_score_steps,
     )
     observation_horizon = int(shape_info["policy_observation_horizon"])
     episode_results: list[dict[str, Any]] = []
@@ -143,6 +196,7 @@ def run_pusht_lowdim_rollouts(
             reward_trace: list[float] = []
             contact_trace: list[int] = []
             action_trace: list[list[float]] = []
+            selected_candidate_trace: list[int] = []
             replan_steps: list[int] = []
             agent_path: list[list[float]] = [state_obs[:2].astype(np.float64).tolist()]
             block_path: list[list[float]] = [state_obs[2:4].astype(np.float64).tolist()]
@@ -155,18 +209,22 @@ def run_pusht_lowdim_rollouts(
                 replan_steps.append(step_count)
                 stacked_obs = np.stack(list(observation_buffer), axis=0)
                 obs_tensor = torch.from_numpy(stacked_obs).unsqueeze(0).to(device)
-                predicted_actions = predict_actions(
+                candidate_actions = predict_action_candidates(
                     model=model,
                     scheduler=scheduler,
                     observations=obs_tensor,
                     config=config,
                     shape_info=shape_info,
+                    num_candidates_override=num_candidates_override,
                 )[0].detach().cpu().numpy()
-                exec_actions = (
-                    predicted_actions[action_slice[0] : action_slice[1]]
-                    if action_slice is not None
-                    else predicted_actions
+                exec_actions, selected_candidate_index = _select_candidate_actions(
+                    candidates=candidate_actions,
+                    state_obs=state_obs,
+                    action_slice=action_slice,
+                    score_slice=score_slice,
+                    candidate_selection=candidate_selection,
                 )
+                selected_candidate_trace.append(selected_candidate_index)
                 exec_actions, stabilization_triggered = _apply_rollout_controller(
                     exec_actions=exec_actions,
                     state_obs=state_obs,
@@ -215,8 +273,12 @@ def run_pusht_lowdim_rollouts(
                     "final_state": np.asarray(state_obs, dtype=np.float64).tolist(),
                     "goal_pose": goal_pose.astype(np.float64).tolist(),
                     "controller_mode": controller_mode,
+                    "candidate_selection": candidate_selection,
+                    "num_candidates": int(candidate_actions.shape[0]),
+                    "candidate_score_steps": candidate_score_steps,
                     "stabilization_trigger_count": stabilization_trigger_count,
                     "replan_steps": replan_steps,
+                    "selected_candidate_trace": selected_candidate_trace,
                     "coverage_trace": coverage_trace,
                     "reward_trace": reward_trace,
                     "contact_trace": contact_trace,
