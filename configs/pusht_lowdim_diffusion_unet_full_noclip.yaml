@@ -1,0 +1,60 @@
+experiment:
+  name: pusht_lowdim_diffusion_unet_full_noclip
+  output_dir: outputs/pusht_lowdim_diffusion_unet_full_noclip
+
+seed: 42
+
+dataset:
+  name: pusht_lowdim
+  path: data/pusht/pusht_cchi_v7_replay.zarr
+  horizon: 16
+  n_obs_steps: 2
+  n_action_steps: 8
+  val_ratio: 0.02
+  max_train_episodes: 90
+  max_train_windows: 12000
+  max_val_windows: 1024
+
+model:
+  type: diffusion_unet_lowdim
+  diffusion_step_embed_dim: 256
+  down_dims: [128, 256, 512]
+  kernel_size: 5
+  n_groups: 8
+  cond_predict_scale: true
+  diffusion_steps: 100
+  beta_start: 0.0001
+  beta_end: 0.02
+  beta_schedule: squaredcos_cap_v2
+  clip_sample: false
+
+training:
+  batch_size: 64
+  epochs: 200
+  lr: 0.0001
+  weight_decay: 0.000001
+  device: auto
+  log_interval: 1
+  monitor_metric: rollout_mean_final_coverage
+  monitor_mode: max
+  use_ema: true
+  ema:
+    update_after_step: 0
+    inv_gamma: 1.0
+    power: 0.75
+    min_value: 0.0
+    max_value: 0.9999
+  rollout_validation:
+    enabled: true
+    interval: 10
+    episodes: 3
+    seed_start: 100000
+    max_steps: 300
+    exec_steps: 1
+    controller_mode: policy
+
+evaluation:
+  batch_size: 64
+  samples_per_observation: 1
+  deterministic_sampling: true
+  oa_step_convention: true

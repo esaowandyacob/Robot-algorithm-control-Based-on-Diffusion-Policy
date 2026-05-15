@@ -1,0 +1,168 @@
+通过中期检查，该同学已初步完成了“基于 Diffusion Policy 的机器人操控算法设计与实现”相关任务，
+完成了基础训练与评估框架搭建，实现了 Behavior Cloning 基线和 Diffusion Policy 初步模型，
+并能够在 Push-T 低维数据集上开展训练、测试和指标分析，形成了阶段性实验结果。
+
+存在问题：
+1、当前 Diffusion Policy 在任务中的执行效果还不够稳定
+2、实验数据和对比场景还不够丰富
+3、论文材料整理和结果分析还需进一步完善
+
+解决方案：
+1、继续优化网络结构和训练参数，提高模型稳定性与任务成功率
+2、补充更多实验配置和对比实验，完善结果统计
+3、整理实验图表与阶段性结论，为后续论文撰写做好准备
+
+
+rollout_mean_final_coverage=0.041092 action_mae=7905.307617 rollout_max_reward=0.043254
+
+(.venv) PS C:\Users\geroge\Desktop\project> python -m dp_project.cli.train --config configs\pusht_lowdim_diffusion_unet_noclip.yaml --epochs 150 --output-dir outputs\win_diffusion_unet_noclip
+[epoch 001] train_loss=0.640526 action_mae=16480.760742
+[epoch 002] train_loss=0.263285 action_mae=11621.646484
+[epoch 003] train_loss=0.203942 action_mae=9926.983398
+[epoch 004] train_loss=0.176549 action_mae=8715.877930
+[epoch 005] train_loss=0.156294 rollout_mean_final_coverage=0.041092 action_mae=7905.307617 rollout_max_reward=0.043254
+[epoch 006] train_loss=0.143448 action_mae=7350.148926
+[epoch 007] train_loss=0.140815 action_mae=6631.545410
+[epoch 008] train_loss=0.154585 action_mae=5859.492676
+[epoch 009] train_loss=0.132285 action_mae=5611.367432
+[epoch 010] train_loss=0.121630 rollout_mean_final_coverage=0.041092 action_mae=5343.086914 rollout_max_reward=0.043254
+[epoch 011] train_loss=0.116911 action_mae=5047.845215
+[epoch 012] train_loss=0.123764 action_mae=4779.177979
+[epoch 013] train_loss=0.124481 action_mae=4431.552246
+[epoch 014] train_loss=0.122728 action_mae=4127.781250
+[epoch 015] train_loss=0.126149 rollout_mean_final_coverage=0.041092 action_mae=3899.465820 rollout_max_reward=0.043254
+[epoch 016] train_loss=0.113564 action_mae=3624.568481
+[epoch 017] train_loss=0.106835 action_mae=3515.724121
+[epoch 018] train_loss=0.101576 action_mae=3234.560181
+[epoch 019] train_loss=0.103031 action_mae=3031.510986
+[epoch 020] train_loss=0.120136 rollout_mean_final_coverage=0.041092 action_mae=2910.820435 rollout_max_reward=0.043254
+[epoch 021] train_loss=0.108512 action_mae=2700.739380
+[epoch 022] train_loss=0.099351 action_mae=2551.569824
+[epoch 023] train_loss=0.103278 action_mae=2393.524658
+[epoch 024] train_loss=0.102494 action_mae=2100.758301
+[epoch 025] train_loss=0.112066 rollout_mean_final_coverage=0.041092 action_mae=2252.392456 rollout_max_reward=0.043254
+[epoch 026] train_loss=0.102295 action_mae=2090.207886
+[epoch 027] train_loss=0.104631 action_mae=1874.061890
+[epoch 028] train_loss=0.108324 action_mae=1698.370972
+[epoch 029] train_loss=0.103026 action_mae=1759.051819
+[epoch 030] train_loss=0.095216 rollout_mean_final_coverage=0.041092 action_mae=1781.478149 rollout_max_reward=0.043254
+[epoch 031] train_loss=0.088021 action_mae=1454.149963
+[epoch 032] train_loss=0.086135 action_mae=1369.356506
+[epoch 033] train_loss=0.089922 action_mae=1316.086975
+[epoch 034] train_loss=0.094909 action_mae=1159.542603
+[epoch 035] train_loss=0.102353 rollout_mean_final_coverage=0.041092 action_mae=1037.254333 rollout_max_reward=0.043254
+[epoch 036] train_loss=0.120110 action_mae=998.794006
+[epoch 037] train_loss=0.122521 action_mae=925.563080
+[epoch 038] train_loss=0.101288 action_mae=904.687012
+[epoch 039] train_loss=0.094176 action_mae=988.604584
+[epoch 040] train_loss=0.095151 rollout_mean_final_coverage=0.041092 action_mae=832.361542 rollout_max_reward=0.043254
+[epoch 041] train_loss=0.087442 action_mae=944.376526
+[epoch 042] train_loss=0.084988 action_mae=900.587158
+[epoch 043] train_loss=0.084129 action_mae=864.780640
+[epoch 044] train_loss=0.083301 action_mae=926.619934
+[epoch 045] train_loss=0.089888 rollout_mean_final_coverage=0.041092 action_mae=844.686310 rollout_max_reward=0.043254
+[epoch 046] train_loss=0.092948 action_mae=849.112122
+[epoch 047] train_loss=0.085923 action_mae=810.335907
+[epoch 048] train_loss=0.080570 action_mae=775.304993
+[epoch 049] train_loss=0.089633 action_mae=748.180725
+[epoch 050] train_loss=0.078846 rollout_mean_final_coverage=0.041092 action_mae=768.741791 rollout_max_reward=0.043254
+[epoch 051] train_loss=0.079276 action_mae=664.998657
+[epoch 052] train_loss=0.079247 action_mae=704.680756
+[epoch 053] train_loss=0.088313 action_mae=721.859711
+[epoch 054] train_loss=0.080755 action_mae=548.619156
+[epoch 055] train_loss=0.079381 rollout_mean_final_coverage=0.041092 action_mae=571.882874 rollout_max_reward=0.043254
+[epoch 056] train_loss=0.078214 action_mae=518.831024
+[epoch 057] train_loss=0.084993 action_mae=461.359451
+[epoch 058] train_loss=0.074144 action_mae=448.930481
+[epoch 059] train_loss=0.081964 action_mae=461.261078
+[epoch 060] train_loss=0.081448 rollout_mean_final_coverage=0.041092 action_mae=425.863007 rollout_max_reward=0.043254
+[epoch 061] train_loss=0.075092 action_mae=457.932205
+[epoch 062] train_loss=0.076934 action_mae=409.612656
+[epoch 063] train_loss=0.087386 action_mae=322.243408
+[epoch 064] train_loss=0.077081 action_mae=352.134033
+[epoch 065] train_loss=0.071973 rollout_mean_final_coverage=0.041092 action_mae=397.072662 rollout_max_reward=0.043254
+[epoch 066] train_loss=0.069078 action_mae=324.879791
+[epoch 067] train_loss=0.065993 action_mae=371.172775
+[epoch 068] train_loss=0.070172 action_mae=282.549133
+[epoch 069] train_loss=0.073891 action_mae=275.472427
+[epoch 070] train_loss=0.069452 rollout_mean_final_coverage=0.041092 action_mae=281.593399 rollout_max_reward=0.043254
+[epoch 071] train_loss=0.068477 action_mae=205.062469
+[epoch 072] train_loss=0.068252 action_mae=241.193161
+[epoch 073] train_loss=0.072251 action_mae=211.942268
+[epoch 074] train_loss=0.066487 action_mae=231.256607
+[epoch 075] train_loss=0.061351 rollout_mean_final_coverage=0.041092 action_mae=186.904327 rollout_max_reward=0.043254
+[epoch 076] train_loss=0.068602 action_mae=172.151608
+[epoch 077] train_loss=0.083107 action_mae=158.177101
+[epoch 078] train_loss=0.076644 action_mae=151.048370
+[epoch 079] train_loss=0.075426 action_mae=174.456093
+[epoch 080] train_loss=0.068206 rollout_mean_final_coverage=0.041092 action_mae=162.144424 rollout_max_reward=0.043254
+[epoch 081] train_loss=0.063626 action_mae=158.463196
+[epoch 082] train_loss=0.062913 action_mae=165.579147
+[epoch 083] train_loss=0.070003 action_mae=164.354584
+[epoch 084] train_loss=0.075122 action_mae=144.299294
+[epoch 085] train_loss=0.072853 rollout_mean_final_coverage=0.041092 action_mae=143.046257 rollout_max_reward=0.043254
+[epoch 086] train_loss=0.064614 action_mae=144.074551
+[epoch 087] train_loss=0.062710 action_mae=133.923122
+[epoch 088] train_loss=0.059718 action_mae=118.025505
+[epoch 089] train_loss=0.059365 action_mae=91.569160
+[epoch 090] train_loss=0.075673 rollout_mean_final_coverage=0.041092 action_mae=124.740221 rollout_max_reward=0.043254
+[epoch 091] train_loss=0.119786 action_mae=120.971142
+[epoch 092] train_loss=0.100783 action_mae=114.266800
+[epoch 093] train_loss=0.083983 action_mae=157.637829
+[epoch 094] train_loss=0.071865 action_mae=134.205055
+[epoch 095] train_loss=0.064307 rollout_mean_final_coverage=0.041092 action_mae=157.910812 rollout_max_reward=0.043254
+[epoch 096] train_loss=0.063366 action_mae=138.912727
+[epoch 097] train_loss=0.064351 action_mae=74.877249
+[epoch 098] train_loss=0.062101 action_mae=107.317158
+[epoch 099] train_loss=0.065777 action_mae=105.417789
+[epoch 100] train_loss=0.062760 rollout_mean_final_coverage=0.041092 action_mae=83.496710 rollout_max_reward=0.043254
+[epoch 101] train_loss=0.062528 action_mae=92.606956
+[epoch 102] train_loss=0.088363 action_mae=87.727743
+[epoch 103] train_loss=0.084623 action_mae=156.098259
+[epoch 104] train_loss=0.067120 action_mae=120.568108
+[epoch 105] train_loss=0.065383 rollout_mean_final_coverage=0.041092 action_mae=118.476471 rollout_max_reward=0.043254
+[epoch 106] train_loss=0.072216 action_mae=112.549000
+[epoch 107] train_loss=0.064909 action_mae=110.007305
+[epoch 108] train_loss=0.081712 action_mae=121.930801
+[epoch 109] train_loss=0.070994 action_mae=102.293690
+[epoch 110] train_loss=0.070990 rollout_mean_final_coverage=0.041092 action_mae=129.925579 rollout_max_reward=0.043254
+[epoch 111] train_loss=0.057748 action_mae=82.416876
+[epoch 112] train_loss=0.062260 action_mae=94.353539
+[epoch 113] train_loss=0.065384 action_mae=82.100590
+[epoch 114] train_loss=0.062131 action_mae=73.234825
+[epoch 115] train_loss=0.057122 rollout_mean_final_coverage=0.041092 action_mae=77.282557 rollout_max_reward=0.043254
+[epoch 116] train_loss=0.068096 action_mae=71.848610
+[epoch 117] train_loss=0.069147 action_mae=92.496475
+[epoch 118] train_loss=0.058576 action_mae=57.914833
+[epoch 119] train_loss=0.057758 action_mae=95.344975
+[epoch 120] train_loss=0.059219 rollout_mean_final_coverage=0.041092 action_mae=94.653080 rollout_max_reward=0.043254
+[epoch 121] train_loss=0.058120 action_mae=71.548470
+[epoch 122] train_loss=0.056227 action_mae=63.370256
+[epoch 123] train_loss=0.057871 action_mae=70.688131
+[epoch 124] train_loss=0.058719 action_mae=77.714012
+[epoch 125] train_loss=0.063290 rollout_mean_final_coverage=0.041092 action_mae=52.101633 rollout_max_reward=0.043254
+[epoch 126] train_loss=0.056477 action_mae=56.033007
+[epoch 127] train_loss=0.062869 action_mae=77.101957
+[epoch 128] train_loss=0.055307 action_mae=67.475391
+[epoch 129] train_loss=0.051679 action_mae=55.857866
+[epoch 130] train_loss=0.055573 rollout_mean_final_coverage=0.041092 action_mae=67.781366 rollout_max_reward=0.043254
+[epoch 131] train_loss=0.054023 action_mae=50.076332
+[epoch 132] train_loss=0.050523 action_mae=51.618629
+[epoch 133] train_loss=0.050469 action_mae=61.049028
+[epoch 134] train_loss=0.051338 action_mae=55.058180
+[epoch 135] train_loss=0.061296 rollout_mean_final_coverage=0.057874 action_mae=46.406244 rollout_max_reward=0.060920
+[epoch 136] train_loss=0.060306 action_mae=44.729576
+[epoch 137] train_loss=0.050963 action_mae=44.254698
+[epoch 138] train_loss=0.048918 action_mae=39.991163
+[epoch 139] train_loss=0.049302 action_mae=38.325855
+[epoch 140] train_loss=0.052081 rollout_mean_final_coverage=0.041092 action_mae=40.274035 rollout_max_reward=0.043254
+[epoch 141] train_loss=0.052266 action_mae=43.468473
+[epoch 142] train_loss=0.065566 action_mae=36.746803
+[epoch 143] train_loss=0.056305 action_mae=41.861092
+[epoch 144] train_loss=0.053492 action_mae=36.386723
+[epoch 145] train_loss=0.063061 rollout_mean_final_coverage=0.208828 action_mae=43.314018 rollout_max_reward=0.219819
+[epoch 146] train_loss=0.054246 action_mae=34.313602
+[epoch 147] train_loss=0.050571 action_mae=40.386429
+[epoch 148] train_loss=0.063690 action_mae=39.084791
+[epoch 149] train_loss=0.052615 action_mae=52.955009
+[epoch 150] train_loss=0.049136 rollout_mean_final_coverage=0.041092 action_mae=44.797087 rollout_max_reward=0.043254
