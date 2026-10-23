@@ -157,3 +157,165 @@ README.md
 2. 新增 `datasets/real_*.py` 负责读取和标准化观测、动作。
 3. 保持 `train.py / evaluate.py` 接口不变，只替换数据源和模型输入维度。
 4. 在基线中加入 LSTM-BC 或 MLP-BC，对比成功率、收敛速度和失败案例。
+
+---
+
+# Diffusion Policy Graduation Project
+
+This project is built step by step from the assignment *Design and Implementation of a Robot Manipulation Algorithm Based on Diffusion Policy*. The goal is not to match every experiment in the paper in one pass. Work proceeds through verifiable engineering stages:
+
+1. Stage 1: Build a minimal runnable Diffusion Policy framework.
+2. Stage 2: Connect a public dataset and finish preprocessing and the training pipeline.
+3. Stage 3: Add baselines, experimental comparisons, and result analysis.
+4. Stage 4: Organize experiment records, figures, and conclusions for the design report.
+
+The repository has finished the Stage 1 skeleton:
+
+- A low-dimensional multimodal trajectory task, `ToyMultimodalTrajectoryDataset`
+- A Behavior Cloning baseline
+- A minimal runnable Diffusion Policy-style action diffusion model
+- Training scripts, evaluation scripts, config files, and output-directory conventions
+
+This stage checks one claim: when the same observation admits several reasonable actions, diffusion fits a multimodal action distribution better than deterministic behavior cloning. When the data source later changes from the toy task to a public robot dataset, the training and evaluation framework can be reused as is.
+
+The repository has also taken the first step of Stage 2: the official Push-T low-dimensional state format. It now supports:
+
+- Automatic download and extraction of the official Push-T data package
+- Reading official zarr replay data
+- Cutting training windows by `obs_horizon -> pred_horizon`
+- Training low-dimensional BC and Diffusion baselines through the same `dp-train / dp-eval` interface
+- Optional deterministic sampling for Diffusion inference, so comparisons stay stable under `action_mse`
+- A route closer to the official low-dim Diffusion Policy: `Push-T lowdim + 1D UNet + EMA`
+- Execution-action slice evaluation under `oa_step_convention` on the lowdim route, so the error of the segment that is actually executed can be reported on its own
+
+## Environment
+
+This project uses `uv` with Python 3.11.
+
+```bash
+uv python install 3.11
+uv sync
+```
+
+## Running
+
+### 1. Download the Push-T data
+
+```bash
+uv run dp-download-pusht
+```
+
+Train Diffusion Policy:
+
+```bash
+uv run dp-train --config configs/toy_diffusion.yaml
+```
+
+Train the Behavior Cloning baseline:
+
+```bash
+uv run dp-train --config configs/toy_bc.yaml
+```
+
+Train the Push-T low-dimensional state smoke configs:
+
+```bash
+uv run dp-train --config configs/pusht_state_bc_smoke.yaml
+uv run dp-train --config configs/pusht_state_diffusion_smoke.yaml
+```
+
+Train the full Push-T low-dimensional state configs:
+
+```bash
+uv run dp-train --config configs/pusht_state_bc.yaml
+uv run dp-train --config configs/pusht_state_diffusion.yaml
+uv run dp-train --config configs/pusht_state_diffusion_mlp.yaml
+```
+
+Train the Push-T lowdim route that is closer to the official implementation:
+
+```bash
+uv run dp-train --config configs/pusht_lowdim_bc.yaml
+uv run dp-train --config configs/pusht_lowdim_bc_rollout_select.yaml
+uv run dp-train --config configs/pusht_lowdim_bc_rollout_select_topk.yaml
+uv run dp-train --config configs/pusht_lowdim_diffusion_unet.yaml
+uv run dp-train --config configs/pusht_lowdim_diffusion_unet_dev.yaml
+uv run dp-train --config configs/pusht_lowdim_bc_terminal_bias.yaml
+uv run dp-train --config configs/pusht_lowdim_bc_terminal_bias_soft.yaml
+```
+
+Evaluate a model:
+
+```bash
+uv run dp-eval --checkpoint outputs/toy_diffusion/best.pt
+uv run dp-eval --checkpoint outputs/toy_bc/best.pt
+```
+
+Generate an experiment report:
+
+```bash
+uv run dp-report \
+  --output-dirs outputs/pusht_state_bc_smoke outputs/pusht_state_diffusion_smoke \
+  --report-dir reports/pusht_state_smoke \
+  --title "Push-T State Smoke Report"
+```
+
+Run a closed-loop Push-T lowdim rollout:
+
+```bash
+uv run dp-rollout-pusht \
+  --checkpoint outputs/pusht_lowdim_bc_phase6_full/best.pt \
+  --episodes 5 \
+  --exec-steps 4 \
+  --output-json outputs/pusht_lowdim_bc_phase6_full/rollout_metrics.json
+```
+
+If `rollout_metrics.json` contains per-step trajectories, `dp-report` appends rollout coverage curves, final-coverage breakdowns, and a closed-loop diagnostic figure for each experiment.
+
+To test the controller wrapper, turn on `stabilize` mode:
+
+```bash
+uv run dp-rollout-pusht \
+  --checkpoint outputs/pusht_lowdim_bc_phase6_full/best.pt \
+  --controller-mode stabilize \
+  --stabilize-coverage-threshold 0.84 \
+  --output-json outputs/pusht_lowdim_bc_phase6_full/rollout_metrics_stabilize.json
+```
+
+If training used `top_k_checkpoints`, re-select candidate checkpoints on a larger seed set:
+
+```bash
+uv run dp-select-pusht-checkpoints \
+  --output-dir outputs/pusht_lowdim_bc_phase9_rollout_topk \
+  --episodes 20 \
+  --selection-metric success_rate \
+  --copy-best-to outputs/pusht_lowdim_bc_phase9_rollout_topk/best_long_eval.pt
+```
+
+For a quick smoke test, shorten the number of training epochs:
+
+```bash
+uv run dp-train --config configs/toy_diffusion.yaml --epochs 3 --output-dir outputs/toy_diffusion_smoke
+uv run dp-train --config configs/toy_bc.yaml --epochs 3 --output-dir outputs/toy_bc_smoke
+```
+
+## Directory layout
+
+```text
+configs/
+  toy_bc.yaml
+  toy_diffusion.yaml
+src/dp_project/
+  cli/
+  datasets/
+  models/
+PROJECT_ROADMAP.md
+README.md
+```
+
+## Suggested order for adding a public dataset
+
+1. Start with a low-barrier public dataset, such as `Push-T` or a single-task robomimic dataset.
+2. Add `datasets/real_*.py` to load and standardize observations and actions.
+3. Keep the `train.py / evaluate.py` interface unchanged. Replace only the data source and the model input dimensions.
+4. Add LSTM-BC or MLP-BC to the baselines, and compare success rate, convergence speed, and failure cases.
